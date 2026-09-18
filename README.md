@@ -70,7 +70,7 @@ import numpy as np
 from quantcore.stats import newey_west_summary
 from quantcore.timeseries import ADF_CRIT_CONST, adf_tstat, ols
 
-fit = ols(y, np.column_stack([x, np.ones(len(x))]))   # explicit intercept
+fit = ols(y, np.column_stack([x, np.ones(len(x))]))  # explicit intercept
 tstat, nobs = adf_tstat(fit.resid, lags=1, constant=False)
 reverts = tstat < ADF_CRIT_CONST["5%"]
 
