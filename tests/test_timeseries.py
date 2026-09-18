@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from statsmodels.tsa.stattools import adfuller
 
-from quantcore.timeseries import ADF_CRIT_CONST, adf_tstat, ols, ou_half_life
+from ithildincore.timeseries import ADF_CRIT_CONST, adf_tstat, ols, ou_half_life
 
 
 class TestTimeseriesPrimitives:

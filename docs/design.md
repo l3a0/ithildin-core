@@ -1,4 +1,4 @@
-# Design — quant-core
+# Design — ithildin-core
 
 ## Contents
 
@@ -85,7 +85,8 @@ once rather than re-argued.
 | Cut | Why |
 | --- | --- |
 | Keeping two copies in step with a drift test | The test cannot exist. Neither consumer's continuous integration can see the other's checkout, so the check would compare against a committed checksum that fires only when somebody updates it. A rule that depends on remembering is what the duplication already was. |
+| The name `quantcore` | Taken on PyPI by an unrelated backtesting package whose 0.1.0 release satisfies a `quantcore>=0.1` floor. A consumer declaring the dependency by name rather than by URL installed that package under the name it imports. Renamed at `v0.2.0`. The direct-URL pin both consumers use already closed the hole, so this is about not needing the pin to be the only thing standing between a contributor and someone else's code. |
 | Reading configuration or files from an estimator | It would let one call return two answers, and a consumer pinning the result would have pinned the setting without knowing it. Every function takes arrays and returns numbers. A caller that needs a setting resolves it and passes the value. |
 | Moving `paths.py` here | Its 47 consumers next door look like the strongest case in the account, but the line that matters differs between the two repos: `parents[1]` there against `parents[2]` here, because one nests its package under `src/`. What is shared is the pattern, not the constant, and a helper thin enough to be shared is thinner than the import that would reach it. |
 | Moving `position_sizing.py` and `trade_ledger.py` here | Each has consumers in one repository and none in the other, which is the bar in [CLAUDE.md](../CLAUDE.md) failing. Both also carry that repo's own vocabulary for per-trade outcomes, so they would need rewriting to be neutral before they could be shared, and nothing would consume the result. |
-| A single `quantcore.all` convenience import | It would make every consumer's import graph depend on every module here, so a new dependency in one module becomes a new dependency everywhere. Import the module you use. |
+| A single `ithildincore.all` convenience import | It would make every consumer's import graph depend on every module here, so a new dependency in one module becomes a new dependency everywhere. Import the module you use. |

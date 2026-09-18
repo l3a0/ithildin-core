@@ -26,7 +26,7 @@ the caller writes them, rather than hidden behind a flag, which matters
 because published figures are often printed from one specification and read as
 though they came from the other.
 
-This module imports nothing else in ``quantcore``, so anything can build on it
+This module imports nothing else in ``ithildincore``, so anything can build on it
 without a dependency running backwards.
 """
 

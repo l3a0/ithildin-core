@@ -1,7 +1,23 @@
-# quantcore
+# ithildincore
 
 Estimators shared by more than one of this account's quantitative
 repositories, so that one calculation has one implementation.
+
+## Why the name
+
+`quantcore` was the first name and it lasted one release. That name is taken on
+PyPI by an unrelated backtesting package whose 0.1.0 release satisfies a
+`quantcore>=0.1` floor, so a consumer that declared the dependency by name
+rather than by URL installed a stranger's code. A direct URL closes that, and
+both consumers use one, but a name nobody else has is the thing that stops the
+question coming back.
+
+`ithildincore` was free on PyPI when this was renamed, and the compound matters:
+bare `ithildin` is taken.
+
+Consumers pinned to `v0.1.0` import `quantcore`. From `v0.2.0` the package is
+`ithildincore`, which is why a rename that changes no arithmetic still gets a
+minor bump rather than a patch.
 
 ## Why a separate package
 
@@ -20,11 +36,11 @@ The fix is not a rule about keeping them in step. It is having one of them.
 
 Two modules, each with consumers in both repositories.
 
-1. **`quantcore.timeseries`** is the regression and unit-root work:
+1. **`ithildincore.timeseries`** is the regression and unit-root work:
    ordinary least squares, the Augmented Dickey-Fuller t-statistic at a fixed
    lag, the Ornstein-Uhlenbeck half-life, and the MacKinnon (2010) critical
    values for the plain and Engle-Granger tests.
-2. **`quantcore.stats`** is the significance block for a series whose
+2. **`ithildincore.stats`** is the significance block for a series whose
    observations are not independent. It reports the ordinary t-statistic and
    the Newey-West one side by side, so the gap between them is visible rather
    than a matter of which estimator someone picked.
@@ -52,14 +68,14 @@ A consumer pins an exact tag, and commits whatever lockfile it uses so the
 resolved commit is recorded.
 
 ```bash
-uv add "quantcore @ git+https://github.com/l3a0/quant-core@v0.1.0"
+uv add "ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.1.0"
 ```
 
 For a repository that installs from `requirements.txt` rather than a
 lockfile:
 
 ```text
-quantcore @ git+https://github.com/l3a0/quant-core@v0.1.0
+ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.1.0
 ```
 
 ## Using it
@@ -67,8 +83,8 @@ quantcore @ git+https://github.com/l3a0/quant-core@v0.1.0
 ```python
 import numpy as np
 
-from quantcore.stats import newey_west_summary
-from quantcore.timeseries import ADF_CRIT_CONST, adf_tstat, ols
+from ithildincore.stats import newey_west_summary
+from ithildincore.timeseries import ADF_CRIT_CONST, adf_tstat, ols
 
 fit = ols(y, np.column_stack([x, np.ones(len(x))]))  # explicit intercept
 tstat, nobs = adf_tstat(fit.resid, lags=1, constant=False)
