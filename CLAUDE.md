@@ -1,8 +1,8 @@
-# CLAUDE.md — quant-core
+# CLAUDE.md — ithildin-core
 
 This repo holds the estimators that more than one of the account's
 quantitative repositories use, so that one calculation has one implementation.
-Code lives in `src/quantcore`, with tests under `tests/`. Two modules ship
+Code lives in `src/ithildincore`, with tests under `tests/`. Two modules ship
 today: `timeseries`, the regression and unit-root work, and `stats`, the
 significance block for a series whose observations are not independent.
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from quantcore.stats import NeweyWestSummary, newey_west_lag, newey_west_summary, newey_west_t
+from ithildincore.stats import NeweyWestSummary, newey_west_lag, newey_west_summary, newey_west_t
 
 
 def _ar1(phi: float, *, seed: int, n: int = 252, shift: float = 0.0) -> np.ndarray:

@@ -1,4 +1,4 @@
-# Build plan — quant-core
+# Build plan — ithildin-core
 
 The premise in [docs/design.md](design.md) sets the order. Adding a function
 moves nothing and is cheap. Editing one is a re-pin of every consumer and is
@@ -19,8 +19,8 @@ imports and the unit a version moves.
 
 | Module | What it leaves usable | Consumers at v0.1.0 |
 | --- | --- | --- |
-| `quantcore.timeseries` | Least squares, the ADF t-statistic at a fixed lag, the Ornstein-Uhlenbeck half-life, and the MacKinnon critical values | Both repositories |
-| `quantcore.stats` | The ordinary and Newey-West t-statistics of a series' mean, reported together | `trading-strategies` today, `quantitative-trading` at its first significance claim |
+| `ithildincore.timeseries` | Least squares, the ADF t-statistic at a fixed lag, the Ornstein-Uhlenbeck half-life, and the MacKinnon critical values | Both repositories |
+| `ithildincore.stats` | The ordinary and Newey-West t-statistics of a series' mean, reported together | `trading-strategies` today, `quantitative-trading` at its first significance claim |
 
 **Test surface.** Both modules are pure functions of their arguments, so every
 rule is executable with no network and no fixture file. Three kinds of test
@@ -55,8 +55,8 @@ the thing the bar exists to prevent.
 
 ## Dependencies
 
-None between the modules. `quantcore.stats` imports only `numpy` and
-`quantcore.timeseries` imports only `numpy` and `statsmodels`, so neither can
+None between the modules. `ithildincore.stats` imports only `numpy` and
+`ithildincore.timeseries` imports only `numpy` and `statsmodels`, so neither can
 break the other and a consumer can import one without pulling the other's
 dependencies.
 

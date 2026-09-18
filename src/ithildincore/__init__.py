@@ -6,8 +6,8 @@ project's vocabulary and change without a release.
 
 Two modules meet the bar today.
 
-- :mod:`quantcore.timeseries`, the regression and unit-root primitives.
-- :mod:`quantcore.stats`, the autocorrelation-robust significance block.
+- :mod:`ithildincore.timeseries`, the regression and unit-root primitives.
+- :mod:`ithildincore.stats`, the autocorrelation-robust significance block.
 
 The arithmetic in both is pinned by regression tests in the consuming
 repositories. Reordering a sum or swapping one ``numpy`` call for another
@@ -17,4 +17,4 @@ Version this package and let a consumer upgrade when it is ready to re-pin.
 """
 
 __all__ = ["stats", "timeseries"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"
