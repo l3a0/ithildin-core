@@ -17,4 +17,4 @@ Version this package and let a consumer upgrade when it is ready to re-pin.
 """
 
 __all__ = ["stats", "timeseries"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"
