@@ -68,14 +68,14 @@ A consumer pins an exact tag, and commits whatever lockfile it uses so the
 resolved commit is recorded.
 
 ```bash
-uv add "ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.1.0"
+uv add "ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.3.0"
 ```
 
 For a repository that installs from `requirements.txt` rather than a
 lockfile:
 
 ```text
-ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.1.0
+ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.3.0
 ```
 
 ## Using it
