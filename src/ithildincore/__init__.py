@@ -4,17 +4,18 @@ A module earns a place here by having consumers in two repositories. Anything
 with one consumer belongs in that repository, where it can carry that
 project's vocabulary and change without a release.
 
-Two modules meet the bar today.
+Three modules meet the bar today.
 
 - :mod:`ithildincore.timeseries`, the regression and unit-root primitives.
 - :mod:`ithildincore.stats`, the autocorrelation-robust significance block.
+- :mod:`ithildincore.reversal`, Khandani and Lo's linear reversal weights.
 
-The arithmetic in both is pinned by regression tests in the consuming
+The arithmetic in each is pinned by regression tests in the consuming
 repositories. Reordering a sum or swapping one ``numpy`` call for another
 moves numbers those repositories have committed to disk, so a change to a
 function body is a deliberate re-pin of every consumer rather than a tidy-up.
 Version this package and let a consumer upgrade when it is ready to re-pin.
 """
 
-__all__ = ["stats", "timeseries"]
-__version__ = "0.3.0"
+__all__ = ["reversal", "stats", "timeseries"]
+__version__ = "0.4.0"

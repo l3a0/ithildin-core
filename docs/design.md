@@ -30,8 +30,8 @@ Two consequences follow, and they pull in opposite directions on purpose.
    it is ready rather than when this repo happens to push.
 
 A consumer that floats its dependency gives up the only protection this design
-offers. So the install instructions pin a tag, and both consuming repositories
-commit the resolved commit.
+offers. So the install instructions pin a tag, and each consuming repository
+commits the resolved commit.
 
 ### Why a shared package rather than two copies kept in step
 
@@ -52,7 +52,7 @@ glossing it.
 
 | Term | Definition |
 | --- | --- |
-| Consumer | A repository that installs this package. There are two: [trading-strategies](https://github.com/l3a0/trading-strategies) and [quantitative-trading](https://github.com/l3a0/quantitative-trading). A call site inside this repo is not a consumer. |
+| Consumer | A repository that installs this package. There are three: [trading-strategies](https://github.com/l3a0/trading-strategies), [quantitative-trading](https://github.com/l3a0/quantitative-trading), and [ithildin-runtime](https://github.com/l3a0/ithildin-runtime), which installs it for `reversal` from its first shadow run, [#16](https://github.com/l3a0/ithildin-runtime/issues/16) there. A call site inside this repo is not a consumer. |
 | Re-pin | Updating a committed number because the code that produced it changed. The work lands in the consumer, not here. |
 | Body change | An edit to what an existing function computes, including a change that is arithmetically equivalent on paper. Reordering a sum is a body change, because floating-point addition is not associative. |
 | Load-bearing default | An argument default that decides an answer rather than saving typing. `adf_tstat`'s fixed lag and `ols`'s absent intercept are the two here. Changing one is a body change for every caller that did not pass the argument. |
@@ -89,4 +89,5 @@ once rather than re-argued.
 | Reading configuration or files from an estimator | It would let one call return two answers, and a consumer pinning the result would have pinned the setting without knowing it. Every function takes arrays and returns numbers. A caller that needs a setting resolves it and passes the value. |
 | Moving `paths.py` here | Its 47 consumers next door look like the strongest case in the account, but the line that matters differs between the two repos: `parents[1]` there against `parents[2]` here, because one nests its package under `src/`. What is shared is the pattern, not the constant, and a helper thin enough to be shared is thinner than the import that would reach it. |
 | Moving `position_sizing.py` and `trade_ledger.py` here | Each has consumers in one repository and none in the other, which is the bar in [CLAUDE.md](../CLAUDE.md) failing. Both also carry that repo's own vocabulary for per-trade outcomes, so they would need rewriting to be neutral before they could be shared, and nothing would consume the result. |
+| Moving all of quantitative-trading's `chan.matlab_helpers` here with `reversal` | `reversal_weights` reaches six of its 18 functions, two of them private, and only those moved, in [#19](https://github.com/l3a0/ithildin-core/issues/19). The other twelve have one consumer, quantitative-trading, which is the bar failing, and their docstrings are about Chan's two books and the mirrors his files came from. The price is that quantitative-trading's module is split: its remaining helpers import `_finite` and `_within` from here rather than keeping second copies. |
 | A single `ithildincore.all` convenience import | It would make every consumer's import graph depend on every module here, so a new dependency in one module becomes a new dependency everywhere. Import the module you use. |

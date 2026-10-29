@@ -2,9 +2,14 @@
 
 This repo holds the estimators that more than one of the account's
 quantitative repositories use, so that one calculation has one implementation.
-Code lives in `src/ithildincore`, with tests under `tests/`. Two modules ship
-today: `timeseries`, the regression and unit-root work, and `stats`, the
-significance block for a series whose observations are not independent.
+Code lives in `src/ithildincore`, with tests under `tests/`. Three modules
+ship today.
+
+1. `timeseries`, the regression and unit-root work.
+2. `stats`, the significance block for a series whose observations are not
+   independent.
+3. `reversal`, Khandani and Lo's linear reversal weights and the helpers they
+   are computed with.
 
 **The premise is that a body change is irreversible for the consumer.**
 Consuming repositories commit numbers computed from this code, into test
@@ -131,8 +136,9 @@ This repo has three prose surfaces: this file, `README.md`, and
    intercept and `adf_tstat` uses a fixed lag. Both are load-bearing and both
    are stated in the module docstrings too, so changing either moves three
    surfaces.
-2. **A count of what is here.** This file, `README.md` and `docs/design.md`
-   each say two modules ship. Adding a third moves all three.
+2. **A count of what is here.** This file, `README.md`, `docs/build-plan.md`
+   and `src/ithildincore/__init__.py` each say three modules ship. Adding a
+   fourth moves all four.
 
 There are no generated artifacts, no figure embeds, and no prose reference
 that names a line number, so the wider sweep policy the template carries does
@@ -249,7 +255,7 @@ The bar is two repositories, not two call sites. A module with one consumer
 belongs in that repository, where it keeps that project's vocabulary and
 changes without a release.
 
-Both modules here met the bar the same way and the evidence is worth keeping,
+Each module here met the bar its own way, and the evidence is worth keeping,
 because it is what the bar means in practice.
 
 - `timeseries` was already duplicated. The two copies parsed to the same tree
@@ -258,6 +264,10 @@ because it is what the bar means in practice.
   `quantitative-trading`, and moved because the second repository's next
   significance claim needs it and relocating exercised code is not the same as
   building something new.
+- `reversal` had one consumer, `quantitative-trading`, and moved when
+  `ithildin-runtime`'s first shadow run needed the same function. Only the
+  eight functions it reaches came with it. The twelve other helpers in the
+  file they came from stayed there, because they still have one consumer.
 
 Where a candidate fails the bar, say so on its issue rather than in a message,
 so the next session inherits the answer.

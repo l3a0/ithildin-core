@@ -34,7 +34,7 @@ The fix is not a rule about keeping them in step. It is having one of them.
 
 ## What is here
 
-Two modules, each with consumers in both repositories.
+Three modules, each with consumers in two repositories.
 
 1. **`ithildincore.timeseries`** is the regression and unit-root work:
    ordinary least squares, the Augmented Dickey-Fuller t-statistic at a fixed
@@ -44,6 +44,12 @@ Two modules, each with consumers in both repositories.
    observations are not independent. It reports the ordinary t-statistic and
    the Newey-West one side by side, so the gap between them is visible rather
    than a matter of which estimator someone picked.
+3. **`ithildincore.reversal`** is Khandani and Lo's linear reversal. Its
+   weights buy the stocks that fell most against the day's mean return and
+   short the ones that rose most. It carries the four helpers they are
+   computed with, under the names of the MATLAB functions Chan's script calls.
+   quantitative-trading's backtests compute from it, and ithildin-runtime runs
+   it as a placeholder strategy.
 
 A module earns a place here by having consumers in two repositories. Anything
 with one consumer belongs in that repository, where it can carry that
@@ -68,14 +74,14 @@ A consumer pins an exact tag, and commits whatever lockfile it uses so the
 resolved commit is recorded.
 
 ```bash
-uv add "ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.3.0"
+uv add "ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.4.0"
 ```
 
 For a repository that installs from `requirements.txt` rather than a
 lockfile:
 
 ```text
-ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.3.0
+ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.4.0
 ```
 
 ## Using it
@@ -83,6 +89,7 @@ ithildincore @ git+https://github.com/l3a0/ithildin-core@v0.3.0
 ```python
 import numpy as np
 
+from ithildincore.reversal import reversal_weights
 from ithildincore.stats import newey_west_summary
 from ithildincore.timeseries import ADF_CRIT_CONST, adf_tstat, ols
 
@@ -92,6 +99,8 @@ reverts = tstat < ADF_CRIT_CONST["5%"]
 
 summary = newey_west_summary(daily_returns)
 print(summary.t_naive, summary.t_newey_west, summary.lag)
+
+weights = reversal_weights(closes)  # one row per day, one column per stock
 ```
 
 Two defaults are load-bearing rather than conveniences, and both are there to
@@ -125,8 +134,10 @@ carries the agent instructions, CI, and GitHub-side policy shared with
 [trading-strategies](https://github.com/l3a0/trading-strategies) and
 [quantitative-trading](https://github.com/l3a0/quantitative-trading).
 
-Both modules came from `trading-strategies`, where they were written and where
-their arithmetic was pinned by consumers that are still there. The code was
-copied unchanged and verified so: stripping docstrings from both sides leaves
-files that parse to the same tree. Only the prose was rewritten, to drop
-vocabulary that meant something in that repository and nothing here.
+`timeseries` and `stats` came from `trading-strategies`, where they were
+written and where their arithmetic was pinned by consumers that are still
+there. `reversal` came from `quantitative-trading` at `0237abf2`, for the same
+reason. The code was copied unchanged and verified so: stripping docstrings
+from both sides leaves functions that parse to the same tree. Only the prose
+was rewritten, to drop vocabulary that meant something in the source
+repository and nothing here.

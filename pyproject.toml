@@ -1,6 +1,6 @@
 [project]
 name = "ithildincore"
-version = "0.3.0"
+version = "0.4.0"
 description = "Estimators shared by more than one of l3a0's quantitative repositories."
 readme = "README.md"
 requires-python = ">=3.12"
