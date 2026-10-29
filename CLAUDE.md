@@ -2,9 +2,14 @@
 
 This repo holds the estimators that more than one of the account's
 quantitative repositories use, so that one calculation has one implementation.
-Code lives in `src/ithildincore`, with tests under `tests/`. Two modules ship
-today: `timeseries`, the regression and unit-root work, and `stats`, the
-significance block for a series whose observations are not independent.
+Code lives in `src/ithildincore`, with tests under `tests/`. Three modules
+ship today.
+
+1. `timeseries`, the regression and unit-root work.
+2. `stats`, the significance block for a series whose observations are not
+   independent.
+3. `reversal`, Khandani and Lo's linear reversal weights and the helpers they
+   are computed with.
 
 **The premise is that a body change is irreversible for the consumer.**
 Consuming repositories commit numbers computed from this code, into test
@@ -124,15 +129,16 @@ A repo drifts when two surfaces describe the same thing and only one gets update
 - **The design doc is the single authority for reasoning.** Code comments point at it rather than restating it.
 - **The issue is the single authority for unbuilt scope**, per the tracker directive above.
 
-This repo has three prose surfaces: this file, `README.md`, and
-`docs/design.md`. Two things drift between them and the code.
+This repo's prose surfaces are this file, `README.md`, `docs/design.md` and
+`docs/build-plan.md`. Two things drift between them and the code.
 
 1. **A default described in prose.** `README.md` says `ols` fits no implicit
    intercept and `adf_tstat` uses a fixed lag. Both are load-bearing and both
    are stated in the module docstrings too, so changing either moves three
    surfaces.
-2. **A count of what is here.** This file, `README.md` and `docs/design.md`
-   each say two modules ship. Adding a third moves all three.
+2. **A count of what is here.** This file, `README.md`, `docs/build-plan.md`
+   and the docstring of `src/ithildincore/__init__.py` each say three modules
+   ship. Adding a fourth moves all four.
 
 There are no generated artifacts, no figure embeds, and no prose reference
 that names a line number, so the wider sweep policy the template carries does
@@ -249,8 +255,8 @@ The bar is two repositories, not two call sites. A module with one consumer
 belongs in that repository, where it keeps that project's vocabulary and
 changes without a release.
 
-Both modules here met the bar the same way and the evidence is worth keeping,
-because it is what the bar means in practice.
+The first two modules here met the bar the same way and the evidence is worth
+keeping, because it is what the bar means in practice.
 
 - `timeseries` was already duplicated. The two copies parsed to the same tree
   once docstrings were set aside, which is the strongest form of the argument.
