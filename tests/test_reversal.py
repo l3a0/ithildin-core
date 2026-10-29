@@ -1,17 +1,20 @@
 """What the reversal weights and their helpers compute, on inputs small enough to check by hand.
 
-Each helper is held on an input where it and the numpy default disagree, with
-the default's answer asserted beside it. So a helper quietly swapped for the
-default fails here rather than agreeing on easy inputs. The cases come from
-quantitative-trading's ``tests/test_matlab_helpers.py`` at ``0237abf2``.
+``smartsum`` and ``smartmean`` are each held on an input where they and the
+numpy default disagree, with the default's answer asserted beside them, so a
+helper quietly swapped for the default fails here rather than agreeing on easy
+inputs. Those cases, and the shift cases, come from quantitative-trading's
+``tests/test_matlab_helpers.py`` at ``0237abf2``.
 
 The weights are held on a three-stock panel worked out by hand, from
 quantitative-trading's ``tests/test_khandani_lo.py`` at the same commit. One
-stock enters on its second day, which is the case that separates the rule
-from the obvious reading of it: the divisor counts closes, not returns, and
-the entering stock's own weight is 0. Exact equality is used wherever the
-arithmetic is exact, because quantitative-trading has committed numbers that
-trace to these bodies.
+stock enters on its second day, which separates the rule from the obvious
+reading of it: the divisor counts closes, not returns, and the entering
+stock's own weight is 0. The tests that change that panel, and the edge
+cases, were written here. Several of them exist because a mutation run found
+a change to a body that no ported test noticed. Exact equality is used
+wherever the arithmetic is exact, because quantitative-trading has committed
+numbers that trace to these bodies bit for bit.
 """
 
 from __future__ import annotations
@@ -52,8 +55,15 @@ class TestSmartmean:
         np.testing.assert_array_equal(smartmean(x), [2.0, 4.0])
         np.testing.assert_array_equal(smartmean(x, axis=1), [1.0, 3.5])
 
-    def test_a_vector_gives_a_scalar(self) -> None:
-        assert np.ndim(smartmean([1.0, 2.0])) == 0
+    def test_a_vector_gives_a_scalar_rather_than_a_0_d_array(self) -> None:
+        assert type(smartmean([1.0, 2.0])) is np.float64
+
+    def test_nothing_finite_gives_nan_without_a_warning(self) -> None:
+        with np.errstate(all="raise"):
+            assert math.isnan(smartmean([NAN, NAN]))
+
+    def test_a_missing_entry_given_as_none_is_skipped(self) -> None:
+        assert smartmean([1.0, None, 3.0]) == 2.0
 
 
 class TestSmartsum:
@@ -74,8 +84,11 @@ class TestSmartsum:
         x = np.array([[1.0, NAN], [3.0, NAN]])
         np.testing.assert_array_equal(smartsum(x), [4.0, NAN])
 
-    def test_a_vector_gives_a_scalar(self) -> None:
-        assert np.ndim(smartsum([1.0, 2.0])) == 0
+    def test_a_vector_gives_a_scalar_rather_than_a_0_d_array(self) -> None:
+        assert type(smartsum([1.0, 2.0])) is np.float64
+
+    def test_a_missing_entry_given_as_none_is_skipped(self) -> None:
+        assert smartsum([1.0, None, 3.0]) == 4.0
 
 
 class TestShifts:
@@ -134,6 +147,10 @@ class TestDailyReturns:
         assert returns[1, :2] == pytest.approx([0.1, -0.05], abs=1e-12)
         assert returns[2] == pytest.approx([0.0, 0.05, 0.1], abs=1e-12)
 
+    def test_the_return_is_the_change_over_yesterdays_price_to_the_last_bit(self) -> None:
+        """``p / previous - 1`` gives 0.10000000000000009 here, not 0.1."""
+        assert daily_returns(np.array([[10.0], [11.0]]))[1, 0] == 0.1
+
     def test_a_missing_price_on_either_day_gives_nan(self) -> None:
         returns = daily_returns(HAND)
         assert np.isnan(returns[0, 2])
@@ -166,10 +183,16 @@ class TestReversalWeightsByHand:
     def test_a_stock_priced_today_and_not_yesterday_has_weight_zero(self) -> None:
         assert reversal_weights(HAND)[1, 2] == 0.0
 
-    def test_a_stock_unpriced_today_has_weight_zero(self) -> None:
+    def test_a_stock_unpriced_today_has_weight_zero_and_leaves_the_divisor(self) -> None:
+        """With B missing on day 2, A and C are the two priced stocks, so n is 2.
+
+        Returns are 0 and +0.10 against a market of +0.05. Dividing by the
+        three columns instead would give weights of 1/60 rather than 1/40.
+        """
         prices = HAND.copy()
         prices[2, 1] = np.nan
         weights = reversal_weights(prices)
+        assert weights[2] == pytest.approx([0.025, 0.0, -0.025], abs=1e-15)
         assert weights[2, 1] == 0.0
         assert weights[3, 1] == 0.0
 
@@ -182,7 +205,7 @@ class TestReversalWeightsByHand:
         assert weights[1, 0] < 0 < weights[1, 1]
 
     def test_two_stocks_over_two_days(self) -> None:
-        """The shape ithildin-runtime passes: yesterday's closes over today's prices.
+        """The shape ithildin-runtime's shadow run plans: yesterday's closes over today's prices.
 
         The returns are +1% and -1%, so the market is 0 and each weight is its
         return, negated, over the two priced stocks.
@@ -196,9 +219,28 @@ class TestReversalWeightsAtTheEdges:
     def test_one_day_has_every_weight_zero(self) -> None:
         assert reversal_weights(np.array([[10.0, 20.0]])).tolist() == [[0.0, 0.0]]
 
-    def test_a_day_with_no_return_at_all_has_every_weight_zero(self) -> None:
+    def test_a_day_with_no_stock_priced_on_both_days_has_every_weight_zero(self) -> None:
         prices = np.array([[10.0, np.nan], [np.nan, 20.0], [11.0, 21.0]])
         assert reversal_weights(prices)[1].tolist() == [0.0, 0.0]
+
+    def test_an_infinite_price_has_weight_zero(self) -> None:
+        weights = reversal_weights(np.array([[1.0, 10.0], [math.inf, 11.0]]))
+        assert weights[1].tolist() == [0.0, 0.0]
+
+    def test_a_zero_price_yesterday_gives_minus_infinity_and_leaves_the_market(self) -> None:
+        """A zero price is finite, so step 4 does not zero it.
+
+        A's return is infinite. The market's mean skips it and is B's and C's
+        +0.10, so B and C are weighted 0 and A is weighted minus infinity.
+        """
+        weights = reversal_weights(np.array([[0.0, 10.0, 20.0], [1.0, 11.0, 22.0]]))
+        assert weights[1, 0] == -math.inf
+        assert weights[1, 1:].tolist() == [0.0, 0.0]
+
+    def test_a_zero_price_on_both_days_gives_nan(self) -> None:
+        weights = reversal_weights(np.array([[0.0, 10.0], [0.0, 11.0]]))
+        assert math.isnan(weights[1, 0])
+        assert weights[1, 1] == 0.0
 
     def test_an_empty_panel_is_refused_by_the_shift(self) -> None:
         with pytest.raises(ValueError, match="backshift by 1 rows is longer than the 0 given"):

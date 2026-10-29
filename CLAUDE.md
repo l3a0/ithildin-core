@@ -129,16 +129,16 @@ A repo drifts when two surfaces describe the same thing and only one gets update
 - **The design doc is the single authority for reasoning.** Code comments point at it rather than restating it.
 - **The issue is the single authority for unbuilt scope**, per the tracker directive above.
 
-This repo has three prose surfaces: this file, `README.md`, and
-`docs/design.md`. Two things drift between them and the code.
+This repo's prose surfaces are this file, `README.md`, `docs/design.md` and
+`docs/build-plan.md`. Two things drift between them and the code.
 
 1. **A default described in prose.** `README.md` says `ols` fits no implicit
    intercept and `adf_tstat` uses a fixed lag. Both are load-bearing and both
    are stated in the module docstrings too, so changing either moves three
    surfaces.
 2. **A count of what is here.** This file, `README.md`, `docs/build-plan.md`
-   and `src/ithildincore/__init__.py` each say three modules ship. Adding a
-   fourth moves all four.
+   and the docstring of `src/ithildincore/__init__.py` each say three modules
+   ship. Adding a fourth moves all four.
 
 There are no generated artifacts, no figure embeds, and no prose reference
 that names a line number, so the wider sweep policy the template carries does
@@ -255,8 +255,8 @@ The bar is two repositories, not two call sites. A module with one consumer
 belongs in that repository, where it keeps that project's vocabulary and
 changes without a release.
 
-Each module here met the bar its own way, and the evidence is worth keeping,
-because it is what the bar means in practice.
+The first two modules here met the bar the same way and the evidence is worth
+keeping, because it is what the bar means in practice.
 
 - `timeseries` was already duplicated. The two copies parsed to the same tree
   once docstrings were set aside, which is the strongest form of the argument.
@@ -264,10 +264,6 @@ because it is what the bar means in practice.
   `quantitative-trading`, and moved because the second repository's next
   significance claim needs it and relocating exercised code is not the same as
   building something new.
-- `reversal` had one consumer, `quantitative-trading`, and moved when
-  `ithildin-runtime`'s first shadow run needed the same function. Only the
-  eight functions it reaches came with it. The twelve other helpers in the
-  file they came from stayed there, because they still have one consumer.
 
 Where a candidate fails the bar, say so on its issue rather than in a message,
 so the next session inherits the answer.

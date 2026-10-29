@@ -1,11 +1,11 @@
 """Khandani and Lo's linear reversal weights, and the helpers they are computed with.
 
 The rule buys the stocks that fell most against the market yesterday and
-shorts the ones that rose most, in proportion to how far each moved. Two
-repositories compute from it. quantitative-trading's Khandani and Lo
-backtests call :func:`reversal_weights` on a panel of closes, and
-ithildin-runtime runs it as a placeholder strategy that claims no edge. That
-second consumer is why the function lives here rather than there.
+shorts the ones that rose most, in proportion to how far each moved.
+quantitative-trading's Khandani and Lo backtests call :func:`reversal_weights`
+on a panel of closes. ithildin-runtime's first shadow run will call it as a
+placeholder strategy that claims no edge. That second repository is why the
+function lives here rather than in the first.
 
 On a panel of prices with one row per day and one column per stock:
 
@@ -15,6 +15,12 @@ On a panel of prices with one row per day and one column per stock:
    price that day, not the ones with a finite return.
 4. ``w`` is 0 wherever today's price or yesterday's is not finite.
 
+A price of 0 is finite, so step 4 does not catch it. A stock priced 0
+yesterday and above 0 today has an infinite return. The market's mean skips
+it and its own weight is minus infinity. A stock priced 0 on both days has a
+NaN return and a NaN weight. The code is kept as it was copied, so a caller
+that can see a zero price refuses it before calling.
+
 Step 3's count is the detail that matters. A stock priced today and not
 yesterday has no return, so it takes no part in the market's mean, but it
 still counts in ``n``, and step 4 then sets its own weight to 0. So the
@@ -23,8 +29,15 @@ would give. That is what Chan's ``example3_7.m`` does, read in the mirror
 [egorpe/EPChan-QuantitativeTrading](https://github.com/egorpe/EPChan-QuantitativeTrading)
 at ``1a7195003cf3e85a806e18867e0af547d17ad5c4``.
 
-The four public helpers keep the names of the MATLAB functions that script
-calls, and compute what those functions compute.
+The four public helpers keep the names of Chan's MATLAB helpers. That script
+calls ``smartsum``, ``smartmean`` and ``lag1``, and ``lag1.m`` calls
+``backshift``. They compute what those functions compute on the shapes the
+script passes, with two differences.
+
+1. The mirror's ``smartsum`` and ``smartmean`` need a ``dim`` argument the
+   script leaves out. Here it is ``axis``, defaulting to 0.
+2. :func:`backshift` refuses a shift longer than the rows it is given, where
+   MATLAB would hand back more rows than it was given.
 
 - :func:`smartsum` sums the finite entries, and is NaN where none is finite.
   numpy's ``nansum`` gives 0 there instead.

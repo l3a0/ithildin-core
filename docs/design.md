@@ -52,10 +52,10 @@ glossing it.
 
 | Term | Definition |
 | --- | --- |
-| Consumer | A repository that installs this package. There are three: [trading-strategies](https://github.com/l3a0/trading-strategies), [quantitative-trading](https://github.com/l3a0/quantitative-trading), and [ithildin-runtime](https://github.com/l3a0/ithildin-runtime), which installs it for `reversal` from its first shadow run, [#16](https://github.com/l3a0/ithildin-runtime/issues/16) there. A call site inside this repo is not a consumer. |
+| Consumer | A repository that installs this package. There are two: [trading-strategies](https://github.com/l3a0/trading-strategies) and [quantitative-trading](https://github.com/l3a0/quantitative-trading). [ithildin-runtime](https://github.com/l3a0/ithildin-runtime) becomes the third when its first shadow run, [#16](https://github.com/l3a0/ithildin-runtime/issues/16) there, installs this package for `reversal`. A call site inside this repo is not a consumer. |
 | Re-pin | Updating a committed number because the code that produced it changed. The work lands in the consumer, not here. |
 | Body change | An edit to what an existing function computes, including a change that is arithmetically equivalent on paper. Reordering a sum is a body change, because floating-point addition is not associative. |
-| Load-bearing default | An argument default that decides an answer rather than saving typing. `adf_tstat`'s fixed lag and `ols`'s absent intercept are the two here. Changing one is a body change for every caller that did not pass the argument. |
+| Load-bearing default | An argument default that decides an answer rather than saving typing. `adf_tstat`'s fixed lag, `ols`'s absent intercept, and the `axis` of 0 that `smartsum` and `smartmean` reduce along are the three here. Changing one is a body change for every caller that did not pass the argument. |
 
 ## Configuration
 

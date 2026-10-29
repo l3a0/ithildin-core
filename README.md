@@ -34,7 +34,8 @@ The fix is not a rule about keeping them in step. It is having one of them.
 
 ## What is here
 
-Three modules, each with consumers in two repositories.
+Three modules. The first two each have consumers in two repositories, and the
+third gains its second at ithildin-runtime's first shadow run.
 
 1. **`ithildincore.timeseries`** is the regression and unit-root work:
    ordinary least squares, the Augmented Dickey-Fuller t-statistic at a fixed
@@ -47,9 +48,9 @@ Three modules, each with consumers in two repositories.
 3. **`ithildincore.reversal`** is Khandani and Lo's linear reversal. Its
    weights buy the stocks that fell most against the day's mean return and
    short the ones that rose most. It carries the four helpers they are
-   computed with, under the names of the MATLAB functions Chan's script calls.
-   quantitative-trading's backtests compute from it, and ithildin-runtime runs
-   it as a placeholder strategy.
+   computed with, under the names of Chan's MATLAB helpers.
+   quantitative-trading's backtests compute from it, and ithildin-runtime's
+   first shadow run will run it as a placeholder strategy.
 
 A module earns a place here by having consumers in two repositories. Anything
 with one consumer belongs in that repository, where it can carry that
@@ -103,8 +104,9 @@ print(summary.t_naive, summary.t_newey_west, summary.lag)
 weights = reversal_weights(closes)  # one row per day, one column per stock
 ```
 
-Two defaults are load-bearing rather than conveniences, and both are there to
-stop a result changing for a reason nobody wrote down.
+Three defaults are load-bearing rather than conveniences. The first two are
+there to stop a result changing for a reason nobody wrote down, and the third
+is the reduction Chan's scripts use.
 
 1. `ols` fits no implicit intercept. Add a column of ones when one is wanted.
    A with-intercept fit and a through-origin fit then look different where the
@@ -114,6 +116,9 @@ stop a result changing for a reason nobody wrote down.
    reverse a verdict on the same series, and
    [tests/test_timeseries.py](tests/test_timeseries.py) holds a case where it
    does.
+3. `smartsum` and `smartmean` reduce down each column unless given `axis`.
+   `reversal_weights` passes `axis=1`. A caller that leaves `axis` out gets
+   one answer per column, and changing the default would move it.
 
 ## Running the checks
 
