@@ -1,7 +1,7 @@
 [project]
 name = "ithildincore"
-version = "0.4.0"
-description = "Estimators shared by more than one of l3a0's quantitative repositories."
+version = "0.5.0"
+description = "Estimators and whiteboard sketches shared by more than one of l3a0's quantitative repositories."
 readme = "README.md"
 requires-python = ">=3.12"
 # Two runtime dependencies, and the second is the reason the first is listed
@@ -13,8 +13,21 @@ dependencies = [
     "statsmodels>=0.14",
 ]
 
+# ithildincore.whiteboard draws sketches as GIFs, which needs matplotlib to
+# draw and Pillow to write, and ithildincore.palette converts its colours with
+# matplotlib. The estimators need neither, and a consumer that
+# runs them on a trading host should not install a plotting stack to get them,
+# so the two sit in an extra: `ithildincore[whiteboard] @ git+...`. Pillow
+# arrives with matplotlib anyway, and is listed because the module imports it.
+[project.optional-dependencies]
+whiteboard = [
+    "matplotlib>=3.9",
+    "pillow>=10",
+]
+
 [dependency-groups]
 dev = [
+    "ithildincore[whiteboard]",
     "pytest>=8",
     "ruff>=0.8",
 ]

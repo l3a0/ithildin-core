@@ -22,10 +22,12 @@ imports and the unit a version moves.
 | `ithildincore.timeseries` | Least squares, the ADF t-statistic at a fixed lag, the Ornstein-Uhlenbeck half-life, and the MacKinnon critical values | Both repositories |
 | `ithildincore.stats` | The ordinary and Newey-West t-statistics of a series' mean, reported together | `trading-strategies` today, `quantitative-trading` at its first significance claim |
 | `ithildincore.reversal` | Khandani and Lo's linear reversal weights, the daily returns they read, and the four helpers they are computed with, at v0.4.0 for [#19](https://github.com/l3a0/ithildin-core/issues/19) | `quantitative-trading` today, `ithildin-runtime` at its first shadow run |
+| `ithildincore.whiteboard` | Whiteboard sketches timed, drawn, written as GIFs and checked, at v0.5.0 for [#24](https://github.com/l3a0/ithildin-core/issues/24) | `quantitative-trading`'s posts today, `ithildin-runtime`'s architecture doc on [PR #15](https://github.com/l3a0/ithildin-runtime/pull/15) there |
+| `ithildincore.palette` | The ink, the grey, the chart grounds, and the colour-blind safe and brass sets with their tints, at v0.5.0 for [#24](https://github.com/l3a0/ithildin-core/issues/24) | The same two, through `whiteboard` |
 
-**Test surface.** All three modules are pure functions of their arguments, so
-every rule is executable with no network and no fixture file. Three kinds of test
-carry them.
+**Test surface.** The three estimator modules are pure functions of their
+arguments, so every rule is executable with no network and no fixture file.
+Three kinds of test carry them.
 
 1. **Closed-form cases.** A fit of `y = 2x + 1` returns exactly that, and a
    decay of `z_{t+1} = 0.5 z_t` has half-life `ln(2)/0.5`, and the reversal
@@ -56,9 +58,27 @@ Four tests exist to hold claims the prose makes.
    `reversal` docstring's claim that a stock entering the panel counts in the
    divisor on the day it has no return.
 
+`whiteboard` and `palette` are tested differently, because a sketch's output
+is pixels. Their tests hold four things on two schematic scenes copied from
+quantitative-trading's USD.CAD post.
+
+1. **The timing.** Each scene's frame count and total time are the ones
+   quantitative-trading pinned for its GIF, and the paced timeline changes
+   only the label frames and the hold.
+2. **The drawing.** Ink grows frame by frame, every frame maps onto the fixed
+   palette of its inks, and two draws give the same bytes.
+3. **The checks.** Each layout rule the draft runs has a scene that breaks it,
+   and the rules run in the hand font and the fallback.
+4. **The colours.** The colour-blind safe set's contrast and separation are
+   measured, each tint is a colour its palette already holds, and every hex
+   code is pinned.
+
+No test here compares a GIF's bytes with a committed file, for the reason the
+design doc's register gives.
+
 ## The order
 
-Nothing is queued. All three modules that meet the bar are here, and the next
+Nothing is queued. All five modules that meet the bar are here, and the next
 addition waits for a second repository to need something a first one already
 has.
 
@@ -68,10 +88,15 @@ the thing the bar exists to prevent.
 
 ## Dependencies
 
-None between the modules. `ithildincore.stats` and `ithildincore.reversal`
-import only `numpy`, and `ithildincore.timeseries` imports only `numpy` and
-`statsmodels`, so none can break another and a consumer can import one without
-pulling in another's dependencies.
+One, and it runs one way. `ithildincore.whiteboard` imports
+`ithildincore.palette` for its inks, and nothing imports `whiteboard`.
+`ithildincore.stats` and `ithildincore.reversal` import only `numpy`,
+`ithildincore.timeseries` imports only `numpy` and `statsmodels`, and
+`ithildincore.palette` imports only matplotlib's colour conversions. So no
+estimator can break another, and a consumer can import one without pulling in
+another's dependencies. `whiteboard` and `palette` need matplotlib, and
+`whiteboard` needs Pillow too, which is why both come with the `whiteboard`
+extra.
 
 That is a property to keep rather than a coincidence. A future module that
 wants to build on `timeseries` should say so at the top of its own file, the

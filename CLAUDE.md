@@ -1,8 +1,9 @@
 # CLAUDE.md — ithildin-core
 
 This repo holds the estimators that more than one of the account's
-quantitative repositories use, so that one calculation has one implementation.
-Code lives in `src/ithildincore`, with tests under `tests/`. Three modules
+quantitative repositories use, so that one calculation has one implementation,
+and the whiteboard sketch machinery their posts and design docs draw with.
+Code lives in `src/ithildincore`, with tests under `tests/`. Five modules
 ship today.
 
 1. `timeseries`, the regression and unit-root work.
@@ -10,6 +11,10 @@ ship today.
    independent.
 3. `reversal`, Khandani and Lo's linear reversal weights and the helpers they
    are computed with.
+4. `whiteboard`, whiteboard sketches drawn stroke by stroke and written as
+   looping GIFs.
+5. `palette`, the colours those sketches and quantitative-trading's charts
+   draw in.
 
 **The premise is that a body change is irreversible for the consumer.**
 Consuming repositories commit numbers computed from this code, into test
@@ -137,8 +142,8 @@ This repo's prose surfaces are this file, `README.md`, `docs/design.md` and
    are stated in the module docstrings too, so changing either moves three
    surfaces.
 2. **A count of what is here.** This file, `README.md`, `docs/build-plan.md`
-   and the docstring of `src/ithildincore/__init__.py` each say three modules
-   ship. Adding a fourth moves all four.
+   and the docstring of `src/ithildincore/__init__.py` each say five modules
+   ship. Adding a sixth moves all four.
 
 There are no generated artifacts, no figure embeds, and no prose reference
 that names a line number, so the wider sweep policy the template carries does
@@ -152,13 +157,15 @@ A mechanical consequence of an edit is part of that edit, not a separate decisio
 
 This repo is public. Tracked files never carry secrets or machine-specific paths. Sweep for leaks before any publish.
 
-This repo holds no secrets and needs none. Nothing here reaches a network, a
-vendor, or a filesystem path. Every function takes an array and returns a
-number, which is a deliberate property rather than an accident of what has
-been built so far: an estimator that reads a file or a configuration setting
-cannot be re-derived from its arguments alone, and a consumer could then get
-two answers from one call. The design doc's Considered and rejected register
-carries that decision.
+This repo holds no secrets and needs none. Nothing here reaches a network or
+a vendor. Every estimator takes an array and returns a number, which is a
+deliberate property rather than an accident of what has been built so far: an
+estimator that reads a file or a configuration setting cannot be re-derived
+from its arguments alone, and a consumer could then get two answers from one
+call. The design doc's Considered and rejected register carries that decision.
+`whiteboard` writes files where its caller says, and its pixels depend on the
+machine's fonts, matplotlib settings and library versions. The design doc's
+Configuration section says how each is bounded.
 
 That means there is no configuration table to keep current. If a future module
 needs one, it needs this paragraph rewritten first.
