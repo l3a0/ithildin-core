@@ -69,16 +69,22 @@ network. An estimator that read a setting could return two different answers
 to the same call, and a consumer pinning its result would have pinned the
 setting without knowing it.
 
-`whiteboard` touches the machine in two ways the estimators do not, and both
-are bounded rather than configurable.
+`whiteboard` touches the machine in ways the estimators do not. It adds no
+setting of its own, and each way is bounded.
 
-1. It writes a GIF, to a path the caller passes. It never chooses a path.
-2. Its pixels depend on which hand-drawn font the machine has installed,
-   because matplotlib finds fonts on the machine. That is the one way a call
-   here can give two answers on two machines. The module names the fonts it
-   looks for in order, falls back to matplotlib's own font, and says so in its
-   docstring. A consumer that commits GIFs pins their bytes on the machine
-   that drew them, with that machine's font, and skips the comparison
+1. It writes files. `write_gif` writes a GIF to the path its caller passes.
+   `draft` writes a GIF and its last frame as a PNG into the folder its caller
+   passes, named for the scene's slug, and reads the GIF back to count its
+   frames.
+2. Its pixels depend on the machine as well as the arguments, through
+   matplotlib. Which hand-drawn font is installed changes the text. A
+   `matplotlibrc` file, or the `MATPLOTLIBRC` variable that names one, can
+   change any default the module does not set itself, such as antialiasing,
+   and turning antialiasing off changes a sketch's bytes. The matplotlib and
+   Pillow versions can change them too. The module names the fonts it looks
+   for in order and falls back to matplotlib's own font. A consumer that
+   commits GIFs pins their bytes on one machine with its font, its locked
+   versions and no `matplotlibrc` of its own, and skips the comparison
    elsewhere, as quantitative-trading's tests do.
 
 So there is no configuration table. A future module that needs one needs this
@@ -98,7 +104,7 @@ once rather than re-argued.
 | --- | --- |
 | Keeping two copies in step with a drift test | The test cannot exist. Neither consumer's continuous integration can see the other's checkout, so the check would compare against a committed checksum that fires only when somebody updates it. A rule that depends on remembering is what the duplication already was. |
 | The name `quantcore` | Taken on PyPI by an unrelated backtesting package whose 0.1.0 release satisfies a `quantcore>=0.1` floor. A consumer declaring the dependency by name rather than by URL installed that package under the name it imports. Renamed at `v0.2.0`. The direct-URL pin both consumers use already closed the hole, so this is about not needing the pin to be the only thing standing between a contributor and someone else's code. |
-| Reading configuration or files from an estimator | It would let one call return two answers, and a consumer pinning the result would have pinned the setting without knowing it. Every function takes arrays and returns numbers. A caller that needs a setting resolves it and passes the value. |
+| Reading configuration or files from an estimator | It would let one call return two answers, and a consumer pinning the result would have pinned the setting without knowing it. Every estimator takes arrays and returns numbers. A caller that needs a setting resolves it and passes the value. |
 | Moving `paths.py` here | Its 47 consumers next door look like the strongest case in the account, but the line that matters differs between the two repos: `parents[1]` there against `parents[2]` here, because one nests its package under `src/`. What is shared is the pattern, not the constant, and a helper thin enough to be shared is thinner than the import that would reach it. |
 | Moving `position_sizing.py` and `trade_ledger.py` here | Each has consumers in one repository and none in the other, which is the bar in [CLAUDE.md](../CLAUDE.md) failing. Both also carry that repo's own vocabulary for per-trade outcomes, so they would need rewriting to be neutral before they could be shared, and nothing would consume the result. |
 | Moving all of quantitative-trading's `chan.matlab_helpers` here with `reversal` | `reversal_weights` reaches six of its 18 functions, two of them private, and only those moved, in [#19](https://github.com/l3a0/ithildin-core/issues/19). The other twelve have one consumer, quantitative-trading, which is the bar failing, and their docstrings are about Chan's two books and the mirrors his files came from. The price is that quantitative-trading's module is split: its remaining helpers import `_finite` and `_within` from here rather than keeping second copies. |

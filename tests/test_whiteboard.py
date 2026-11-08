@@ -68,6 +68,10 @@ from ithildincore.whiteboard import (
     write_gif,
 )
 
+#: A font that ships with matplotlib and lays text out wider than DejaVu Sans,
+#: so a test can compare two layouts on a machine with no hand font.
+MONO = "DejaVu Sans Mono"
+
 
 def _question() -> Scene:
     """ "The question" from quantitative-trading's USD.CAD post, a wiggly price
@@ -145,6 +149,16 @@ def question():
     return scene, steps, render(scene, steps, INKS)
 
 
+def test_the_module_exports_no_colour() -> None:
+    """quantitative-trading's machinery module exported ``ACCENT``, ``INKS``,
+    ``TINT`` and ``REJECT_TINT`` meaning the brass set. The same names in
+    :mod:`ithildincore.palette` mean the colour-blind safe set, so this module
+    exports none of them, and a port that only changes its import path fails
+    to import rather than drawing in other colours."""
+    names = {"ACCENT", "GOOD", "LOST", "INKS", "TINT", "REJECT_TINT", "INK", "MUTED", "BRASS"}
+    assert not names & set(vars(whiteboard))
+
+
 class TestTheShapes:
     def test_a_line_keeps_every_corner_and_fills_each_segment_by_length(self) -> None:
         x, y = line([(0.0, 0.0), (1.0, 0.0), (1.0, 2.0)])
@@ -211,6 +225,14 @@ class TestTheTimeline:
         assert [f.ms for f in timeline(scene)][-2:] == [FRAME_MS, HOLD_MS]
         scene = _scene(Fill("band", 1.0, 1.0, 4.0, 1.5, colours.TINT), _line_across())
         assert timeline(scene)[1] == Frame(1, 0, LABEL_MS)
+
+    def test_a_label_appears_only_once_its_stroke_is_complete(self, scenes) -> None:
+        for scene in scenes:
+            for frame in timeline(scene):
+                complete = {s.gid for s in scene.steps[: frame.done] if not isinstance(s, Label)}
+                for step in scene.steps[: frame.done]:
+                    if isinstance(step, Label):
+                        assert step.names in complete, step.text
 
     def test_each_frame_shows_more_than_the_one_before(self, scenes) -> None:
         """Pillow merges two identical frames in a row, so each frame shows a
@@ -390,10 +412,8 @@ class TestTheClearances:
         assert gap == pytest.approx(WIDTH / 10, abs=3)
 
     def test_the_font_changes_the_layout(self, scenes) -> None:
-        if whiteboard.hand_font() == FALLBACK_FONT:
-            pytest.skip("no hand font is installed, so both layouts are DejaVu Sans")
-        installed, fallback = clearances(scenes[0]), clearances(scenes[0], FALLBACK_FONT)
-        assert installed != fallback
+        """DejaVu Sans Mono ships with matplotlib, so this runs on every machine."""
+        assert clearances(scenes[0], MONO) != clearances(scenes[0], FALLBACK_FONT)
 
 
 def _found(scene: Scene, tmp_path) -> list[str]:
@@ -494,20 +514,24 @@ class TestBothFontsAreChecked:
         layout_problems(_scene(_line_across()))
         assert laid == [FALLBACK_FONT]
 
-    def test_a_label_only_the_fallback_pushes_off_the_board_is_flagged(self, monkeypatch) -> None:
-        """A label set to end just inside the right edge in the hand font runs
-        past it in the wider DejaVu Sans."""
-        if whiteboard.hand_font() == FALLBACK_FONT:
-            pytest.skip("no hand font is installed to compare with DejaVu Sans")
+    def test_a_label_only_one_font_pushes_off_the_board_is_flagged_in_it(self, monkeypatch) -> None:
+        """A label set to end just inside the right edge in the narrower of two
+        fonts runs past it in the wider, and only the wider's check flags it.
+        DejaVu Sans Mono stands in for the hand font, because it ships with
+        matplotlib, so this runs on a machine with no hand font, as CI is."""
+        monkeypatch.setattr(whiteboard, "hand_font", lambda: MONO)
         words = "a long label that ends near the edge"
         probe = _scene(_line_across(), Label(words, 0.0, 3.5, names="line"))
-        hand = next(b for t, b in whiteboard.boxes(probe) if t == words)
-        wide = next(b for t, b in whiteboard.boxes(probe, FALLBACK_FONT) if t == words)
-        assert wide.width > hand.width, "DejaVu Sans lays this label out wider"
-        x = (WIDTH - INSIDE_PX - 1 - hand.width) / WIDTH * 10
+        widths = {
+            font: next(b for t, b in whiteboard.boxes(probe, font) if t == words).width
+            for font in (MONO, FALLBACK_FONT)
+        }
+        narrow, wide = sorted(widths, key=widths.get)
+        assert widths[wide] > widths[narrow] + 2 * INSIDE_PX
+        x = (WIDTH - INSIDE_PX - 1 - widths[narrow]) / WIDTH * 10
         found = layout_problems(_scene(_line_across(), Label(words, x, 3.5, names="line")))
         flagged = [f for f in found if "inside the board" in f]
-        assert flagged and all(f.startswith(FALLBACK_FONT) for f in flagged)
+        assert flagged and all(f.startswith(f"{wide}:") for f in flagged)
 
 
 class TestTheTwoColourSets:

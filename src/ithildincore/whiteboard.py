@@ -74,8 +74,9 @@ not install them::
 machinery sat in ``src/chan/usdcad_tests_whiteboard.py`` beside the USD.CAD
 post's scenes, the pacing was copied into each post's module, and the checks
 sat in ``.claude/skills/sketch-notes/draft.py``. The arithmetic and the drawing
-are copied unchanged, and quantitative-trading's committed GIFs redraw byte for
-byte through this module. Six things changed on the way over.
+are copied unchanged but for the names below, and quantitative-trading's
+committed GIFs redraw byte for byte through this module. Seven things changed
+on the way over.
 
 1. The helpers lost their leading underscore, because other repositories call
    them: ``_line`` is :func:`line`, and so on for ``_curve``, ``_arrow``,
@@ -84,16 +85,27 @@ byte through this module. Six things changed on the way over.
    :func:`show`.
 2. ``Scene.gif`` named every file with the USD.CAD post's prefix, so it stayed
    with that post. A scene module names its own files.
-3. The inks moved to :mod:`ithildincore.palette`, so this module's ``INKS``,
-   ``TINT`` and ``REJECT_TINT`` are that module's ``BRASS_INKS``,
-   ``GREEN_TINT`` and ``RED_TINT``.
+3. The inks moved to :mod:`ithildincore.palette`, and this module exports
+   none of them. Its ``INKS``, ``TINT`` and ``REJECT_TINT``, and the brass
+   ``ACCENT``, ``GOOD`` and ``LOST`` it imported, are that module's
+   ``BRASS_INKS``, ``GREEN_TINT``, ``RED_TINT``, ``BRASS``, ``GREEN`` and
+   ``RED``. The same short names there mean the colour-blind safe set, so a
+   port that only changes its import path must rename them too.
 4. :func:`paced_timeline` is the paced timeline each post's
    ``sketch_timeline`` copied, and :func:`write_gif` is the writer each post
    copied, as l3a0/quantitative-trading#708 asked.
-5. The draft script's checks are library functions here, and
-   :func:`clearances`, :func:`boxes` and :func:`style` take the font to lay
-   out in, where the script swapped this module's :func:`hand_font` instead.
-6. The prose was rewritten for a reader outside that repository.
+5. The draft script's checks are library functions here. :func:`clearances`,
+   :func:`boxes` and :func:`style` take the font to lay out in, where the
+   script swapped this module's :func:`hand_font` instead, and
+   :func:`layout_problems` passes it. The script's ``frames_for`` is
+   :func:`paced_timeline`, :func:`draft`'s ``paced`` defaults to off, and its
+   ``SHARED_COLOURS`` and ``PALETTE_COLOURS`` are :data:`BRASS_COLOURS` and
+   :data:`NEW_COLOURS`. :func:`inks_for`'s problem names "the brass set" and
+   "the colour-blind safe set" where the script's named "the shared" colours
+   and ``chan.palette``. Every verdict is the same.
+6. :func:`blend` names its strength ``amount``, where ``_blend`` named it
+   ``blend``, because the function now has that name.
+7. The prose was rewritten for a reader outside that repository.
 """
 
 from __future__ import annotations
@@ -112,21 +124,12 @@ from matplotlib.font_manager import FontProperties, findfont
 from matplotlib.patches import Rectangle
 from PIL import Image
 
-from ithildincore.palette import (
-    ACCENT,
-    BRASS,
-    BRASS_INKS,
-    GOOD,
-    GREEN,
-    GREEN_TINT,
-    INK,
-    INKS,
-    LOST,
-    RED,
-    RED_TINT,
-    REJECT_TINT,
-    TINT,
-)
+# The palette is read through a private name, so this module exports none of
+# its colours. quantitative-trading's machinery module exported ``ACCENT``,
+# ``INKS`` and ``TINT`` meaning the brass set, and the same names in
+# :mod:`ithildincore.palette` mean the colour-blind safe set, so a re-export
+# here would hand a port that only changed its import path other colours.
+import ithildincore.palette as _inks
 
 #: The frame in pixels, and the figure size and dpi that give it.
 WIDTH, HEIGHT = 680, 320
@@ -173,7 +176,7 @@ class Stroke:
     gid: str
     x: np.ndarray
     y: np.ndarray
-    color: str = INK
+    color: str = _inks.INK
     width: float = 2.2
     dashed: bool = False
     frames: int = 8
@@ -211,7 +214,7 @@ class Label:
     x: float
     y: float
     names: str
-    color: str = INK
+    color: str = _inks.INK
     ha: str = "left"
     size: float = 13
     math: bool = False
@@ -314,7 +317,7 @@ def stroke(gid: str, xy: tuple, **style) -> Stroke:
     return Stroke(gid, xy[0], xy[1], **style)
 
 
-def dot(gid: str, x: float, y: float, color: str = BRASS) -> Stroke:
+def dot(gid: str, x: float, y: float, color: str = _inks.BRASS) -> Stroke:
     """A dot at (x, y), drawn on one frame. Its colour defaults to the brass
     set's subject colour, as the module docstring explains."""
     return Stroke(gid, np.array([x]), np.array([y]), color=color, frames=1)
@@ -406,7 +409,7 @@ def blend(ink: str, amount: float) -> np.ndarray:
     return amount * np.array(matplotlib.colors.to_rgb(ink)) + (1 - amount) * board
 
 
-def palette(inks: Sequence[str] = BRASS_INKS) -> Image.Image:
+def palette(inks: Sequence[str] = _inks.BRASS_INKS) -> Image.Image:
     """The GIF's palette as an image Pillow can quantize against: white, then
     each of ``inks`` at each of :data:`BLENDS` with white."""
     colours = [np.array(matplotlib.colors.to_rgb(BOARD))]
@@ -472,7 +475,9 @@ def new_board(scene: Scene) -> tuple[FigureCanvasAgg, list]:
                 visible=False,
             )
             artists.append(text)
-    title = ax.text(0.3, 4.3, scene.title, color=INK, fontsize=16, fontweight="bold", va="center")
+    title = ax.text(
+        0.3, 4.3, scene.title, color=_inks.INK, fontsize=16, fontweight="bold", va="center"
+    )
     return canvas, artists + [title]
 
 
@@ -489,7 +494,7 @@ def show(scene: Scene, artists: Sequence, frame: Frame) -> None:
 
 
 def render(
-    scene: Scene, frames: Sequence[Frame], inks: Sequence[str] = BRASS_INKS
+    scene: Scene, frames: Sequence[Frame], inks: Sequence[str] = _inks.BRASS_INKS
 ) -> list[Image.Image]:
     """Draw every frame of one scene, each mapped onto :func:`palette` of ``inks``."""
     colours = palette(inks)
@@ -505,15 +510,20 @@ def render(
 
 
 def write_gif(
-    scene: Scene, frames: Sequence[Frame], path: Path, inks: Sequence[str] = BRASS_INKS
+    scene: Scene, frames: Sequence[Frame], path: Path, inks: Sequence[str] = _inks.BRASS_INKS
 ) -> Path:
     """Draw ``frames`` of ``scene`` on ``inks`` and save them to ``path`` as a
     GIF that loops forever, each frame shown for its ``ms``. Returns ``path``.
-
-    Pillow's optimizer is off, so the palette :func:`render` fixed reaches the
-    file unchanged.
     """
-    first, *rest = render(scene, frames, inks)
+    _save(render(scene, frames, inks), frames, path)
+    return path
+
+
+def _save(images: Sequence[Image.Image], frames: Sequence[Frame], path: Path) -> None:
+    """Save ``images`` to ``path`` as a GIF that loops forever, each shown for
+    its frame's ``ms``. Pillow's optimizer is off, so the palette
+    :func:`render` fixed reaches the file unchanged."""
+    first, *rest = images
     first.save(
         path,
         save_all=True,
@@ -522,7 +532,6 @@ def write_gif(
         loop=0,
         optimize=False,
     )
-    return path
 
 
 # --- Checks -------------------------------------------------------------------
@@ -603,8 +612,12 @@ CLEAR_PX, INSIDE_PX, APART_LABELS_PX = 10, 5, 4
 
 #: The colours that mark a scene as drawn in one set or the other. The ink and
 #: the grey belong to both, so they decide nothing.
-BRASS_COLOURS = frozenset(to_hex(c) for c in (BRASS, GREEN, RED, GREEN_TINT, RED_TINT))
-NEW_COLOURS = frozenset(to_hex(c) for c in (ACCENT, GOOD, LOST, TINT, REJECT_TINT))
+BRASS_COLOURS = frozenset(
+    to_hex(c) for c in (_inks.BRASS, _inks.GREEN, _inks.RED, _inks.GREEN_TINT, _inks.RED_TINT)
+)
+NEW_COLOURS = frozenset(
+    to_hex(c) for c in (_inks.ACCENT, _inks.GOOD, _inks.LOST, _inks.TINT, _inks.REJECT_TINT)
+)
 
 
 def boxes(scene: Scene, font: str | None = None) -> list:
@@ -699,12 +712,12 @@ def inks_for(scene: Scene, moved: bool = False) -> tuple[tuple[str, ...], list[s
     used = {to_hex(step.color) for step in scene.steps}
     brass = sorted(used & BRASS_COLOURS)
     if not (moved or used & NEW_COLOURS):
-        return BRASS_INKS, []
+        return _inks.BRASS_INKS, []
     left = [
         f"keeps the brass set's {', '.join(brass)} in a scene drawn in the colour-blind "
         "safe set, which the renderer maps onto the nearest new ink"
     ]
-    return INKS, left if brass else []
+    return _inks.INKS, left if brass else []
 
 
 def draft(scene: Scene, out: Path, paced: bool = False, moved: bool = False) -> list[str]:
@@ -720,13 +733,6 @@ def draft(scene: Scene, out: Path, paced: bool = False, moved: bool = False) -> 
     inks, mixed = inks_for(scene, moved)
     images = render(scene, frames, inks)
     gif = out / f"{scene.slug}.gif"
-    images[0].save(
-        gif,
-        save_all=True,
-        append_images=images[1:],
-        duration=[f.ms for f in frames],
-        loop=0,
-        optimize=False,
-    )
+    _save(images, frames, gif)
     images[-1].convert("RGB").save(out / f"{scene.slug}_last.png")
     return mixed + frame_problems(scene, len(frames), gif) + layout_problems(scene)

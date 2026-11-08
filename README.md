@@ -1,7 +1,9 @@
 # ithildincore
 
 Estimators shared by more than one of this account's quantitative
-repositories, so that one calculation has one implementation.
+repositories, so that one calculation has one implementation, and the
+whiteboard sketches their posts and design docs draw, so that one look has one
+implementation too.
 
 ## Why the name
 

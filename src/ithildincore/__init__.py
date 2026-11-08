@@ -1,4 +1,4 @@
-"""Estimators shared by more than one repository.
+"""Estimators and whiteboard sketches shared by more than one repository.
 
 A module earns a place here by having consumers in two repositories. Anything
 with one consumer belongs in that repository, where it can carry that
@@ -20,5 +20,8 @@ function body is a deliberate re-pin of every consumer rather than a tidy-up.
 Version this package and let a consumer upgrade when it is ready to re-pin.
 """
 
-__all__ = ["palette", "reversal", "stats", "timeseries", "whiteboard"]
+# whiteboard and palette are left out, because both import matplotlib, which
+# only the whiteboard extra installs. A star import would load them and fail on
+# an install of the estimators alone.
+__all__ = ["reversal", "stats", "timeseries"]
 __version__ = "0.5.0"
