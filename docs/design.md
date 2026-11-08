@@ -52,10 +52,10 @@ glossing it.
 
 | Term | Definition |
 | --- | --- |
-| Consumer | A repository that installs this package. There are two: [trading-strategies](https://github.com/l3a0/trading-strategies) and [quantitative-trading](https://github.com/l3a0/quantitative-trading). [ithildin-runtime](https://github.com/l3a0/ithildin-runtime) becomes the third when its first shadow run, [#16](https://github.com/l3a0/ithildin-runtime/issues/16) there, installs this package for `reversal`. A call site inside this repo is not a consumer. |
+| Consumer | A repository that installs this package. There are two: [trading-strategies](https://github.com/l3a0/trading-strategies) and [quantitative-trading](https://github.com/l3a0/quantitative-trading). [ithildin-runtime](https://github.com/l3a0/ithildin-runtime) becomes the third when it installs this package, either for `whiteboard`, whose sketches its architecture doc carries on [PR #15](https://github.com/l3a0/ithildin-runtime/pull/15) there, or for `reversal` at its first shadow run, [#16](https://github.com/l3a0/ithildin-runtime/issues/16) there. A call site inside this repo is not a consumer. |
 | Re-pin | Updating a committed number because the code that produced it changed. The work lands in the consumer, not here. |
-| Body change | An edit to what an existing function computes, including a change that is arithmetically equivalent on paper. Reordering a sum is a body change, because floating-point addition is not associative. |
-| Load-bearing default | An argument default that decides an answer rather than saving typing. `adf_tstat`'s fixed lag, `ols`'s absent intercept, and the `axis` of 0 that `smartsum` and `smartmean` reduce along are the three here. Changing one is a body change for every caller that did not pass the argument. |
+| Body change | An edit to what an existing function computes, including a change that is arithmetically equivalent on paper. Reordering a sum is a body change, because floating-point addition is not associative. For `whiteboard`, any edit that moves a byte of a GIF a consumer has committed is a body change, because a consumer publishes the GIF. |
+| Load-bearing default | An argument default that decides an answer rather than saving typing. `adf_tstat`'s fixed lag, `ols`'s absent intercept, the `axis` of 0 that `smartsum` and `smartmean` reduce along, and the brass inks that `whiteboard`'s renderer and `dot` default to are the four here. Changing one is a body change for every caller that did not pass the argument. |
 
 ## Configuration
 
@@ -63,11 +63,23 @@ This repository is public. Tracked files never carry secrets or
 machine-specific paths.
 
 There is no configuration, and that is a property worth protecting rather than
-a stage this package has not reached. Every function takes arrays and returns
-numbers. Nothing reads a file, an environment variable, or a network. An
-estimator that read a setting could return two different answers to the same
-call, and a consumer pinning its result would have pinned the setting without
-knowing it.
+a stage this package has not reached. Every estimator takes arrays and returns
+numbers. Nothing reads an environment variable, a configuration file, or a
+network. An estimator that read a setting could return two different answers
+to the same call, and a consumer pinning its result would have pinned the
+setting without knowing it.
+
+`whiteboard` touches the machine in two ways the estimators do not, and both
+are bounded rather than configurable.
+
+1. It writes a GIF, to a path the caller passes. It never chooses a path.
+2. Its pixels depend on which hand-drawn font the machine has installed,
+   because matplotlib finds fonts on the machine. That is the one way a call
+   here can give two answers on two machines. The module names the fonts it
+   looks for in order, falls back to matplotlib's own font, and says so in its
+   docstring. A consumer that commits GIFs pins their bytes on the machine
+   that drew them, with that machine's font, and skips the comparison
+   elsewhere, as quantitative-trading's tests do.
 
 So there is no configuration table. A future module that needs one needs this
 section rewritten first, and the rejection below argues against it.
@@ -90,4 +102,9 @@ once rather than re-argued.
 | Moving `paths.py` here | Its 47 consumers next door look like the strongest case in the account, but the line that matters differs between the two repos: `parents[1]` there against `parents[2]` here, because one nests its package under `src/`. What is shared is the pattern, not the constant, and a helper thin enough to be shared is thinner than the import that would reach it. |
 | Moving `position_sizing.py` and `trade_ledger.py` here | Each has consumers in one repository and none in the other, which is the bar in [CLAUDE.md](../CLAUDE.md) failing. Both also carry that repo's own vocabulary for per-trade outcomes, so they would need rewriting to be neutral before they could be shared, and nothing would consume the result. |
 | Moving all of quantitative-trading's `chan.matlab_helpers` here with `reversal` | `reversal_weights` reaches six of its 18 functions, two of them private, and only those moved, in [#19](https://github.com/l3a0/ithildin-core/issues/19). The other twelve have one consumer, quantitative-trading, which is the bar failing, and their docstrings are about Chan's two books and the mirrors his files came from. The price is that quantitative-trading's module is split: its remaining helpers import `_finite` and `_within` from here rather than keeping second copies. |
+| Defaulting `whiteboard`'s renderer and `dot` to the colour-blind safe set | quantitative-trading's 28 posts that draw in the brass set rely on the defaults, so flipping them redraws every one of those GIFs, which is a body change for a published figure. New work passes `palette.INKS` and names its colours, and `inks_for` flags a scene that mixes the two sets. The defaults can move when no consumer relies on them. |
+| matplotlib and Pillow as required dependencies | Every consumer of the estimators would install a plotting stack, including a trading host that only runs `reversal`. They are the `whiteboard` extra. The price is that importing `ithildincore.whiteboard` or `ithildincore.palette` fails on an install without the extra, with matplotlib's own import error. |
+| Pinning committed GIF bytes in this repo's tests | A GIF's bytes depend on the installed font, so a byte test here would pass on one machine and fail on CI or skip everywhere it matters. The repository that commits a GIF holds its bytes. These tests hold the timing, the palette, the layout checks, and that two draws on one machine give the same bytes. |
+| Moving the draft script's command line and its folder guard | Which folder a repository commits its figures to, and how it tells that a post has moved to the new colours, are that repository's. The checks the script runs are library functions here, and the script keeps its arguments, its refusal to draft into the figures folder, and its reading of what a module imports. |
+| Moving quantitative-trading's label helpers with the machinery | `_signed`, which prints a typographic minus, and the USD.CAD scenes' `_tick`, `_levels` and `_word` have consumers in one repository, which is the bar failing. A second repository that needs one moves it then. |
 | A single `ithildincore.all` convenience import | It would make every consumer's import graph depend on every module here, so a new dependency in one module becomes a new dependency everywhere. Import the module you use. |
