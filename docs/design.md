@@ -80,7 +80,9 @@ setting of its own, and each way is bounded.
    matplotlib. Which hand-drawn font is installed changes the text. A
    `matplotlibrc` file, or the `MATPLOTLIBRC` variable that names one, can
    change any default the module does not set itself, such as antialiasing,
-   and turning antialiasing off changes a sketch's bytes. The matplotlib and
+   and turning antialiasing off changes a sketch's bytes. So can a change the
+   calling program makes to `matplotlib.rcParams` before it draws, because
+   `render` lays its own settings over whatever is live. The matplotlib and
    Pillow versions can change them too. The module names the fonts it looks
    for in order and falls back to matplotlib's own font. A consumer that
    commits GIFs pins their bytes on one machine with its font, its locked
