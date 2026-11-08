@@ -1,7 +1,8 @@
 # CLAUDE.md — ithildin-core
 
 This repo holds the estimators that more than one of the account's
-quantitative repositories use, so that one calculation has one implementation.
+quantitative repositories use, so that one calculation has one implementation,
+and the whiteboard sketch machinery their posts and design docs draw with.
 Code lives in `src/ithildincore`, with tests under `tests/`. Five modules
 ship today.
 
@@ -162,9 +163,9 @@ deliberate property rather than an accident of what has been built so far: an
 estimator that reads a file or a configuration setting cannot be re-derived
 from its arguments alone, and a consumer could then get two answers from one
 call. The design doc's Considered and rejected register carries that decision.
-`whiteboard` writes a GIF to a path its caller passes, and its pixels depend on
-the fonts the machine has installed. The design doc's Configuration section
-says how both are bounded.
+`whiteboard` writes files where its caller says, and its pixels depend on the
+machine's fonts, matplotlib settings and library versions. The design doc's
+Configuration section says how each is bounded.
 
 That means there is no configuration table to keep current. If a future module
 needs one, it needs this paragraph rewritten first.
