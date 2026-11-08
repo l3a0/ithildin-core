@@ -53,6 +53,8 @@ from ithildincore.whiteboard import (
     Scene,
     Stroke,
     arrow,
+    box,
+    check,
     clearances,
     curve,
     dot,
@@ -63,6 +65,7 @@ from ithildincore.whiteboard import (
     line,
     paced_timeline,
     render,
+    span,
     stroke,
     timeline,
     write_gif,
@@ -189,7 +192,59 @@ class TestTheShapes:
         )
 
 
+class TestTheShapeGeometry:
+    def test_a_segment_gets_points_by_its_length_rounded_up(self) -> None:
+        x, _ = line([(0.0, 0.0), (1.05, 0.0)])
+        assert len(x) == 1 + math.ceil(1.05 * 6)
+        x, _ = line([(0.0, 0.0), (1.0, 0.0)], per_unit=10)
+        assert len(x) == 11
+
+    def test_an_arrows_head_is_two_strokes_of_0_22_at_half_a_radian(self) -> None:
+        x, y = arrow(0.0, 0.0, 2.0, 0.0)
+        head = (2.0 - 0.22 * math.cos(0.5), 0.22 * math.sin(0.5))
+        tips = [(xi, yi) for xi, yi in zip(x, y, strict=True)]
+        assert tips[-1] == pytest.approx((head[0], -head[1]))
+        assert any(t == pytest.approx(head) for t in tips)
+
+    def test_a_box_runs_counterclockwise_from_its_lower_left(self) -> None:
+        x, y = box(1.0, 1.0, 2.0, 3.0)
+        corners = [(1.0, 1.0), (2.0, 1.0), (2.0, 3.0), (1.0, 3.0), (1.0, 1.0)]
+        seen = [(xi, yi) for xi, yi in zip(x, y, strict=True) if (xi, yi) in corners]
+        assert seen == corners
+
+    def test_a_span_has_a_tick_at_each_end(self) -> None:
+        x, y = span(1.0, 3.0, 2.0, tick=0.13)
+        points = set(zip(x.round(9), y.round(9), strict=True))
+        assert {(1.0, 2.13), (1.0, 1.87), (3.0, 2.13), (3.0, 1.87)} <= points
+        assert (x[-1], round(y[-1], 9)) == (3.0, 1.87)
+
+    def test_a_check_is_two_strokes_at_ten_points_a_unit(self) -> None:
+        x, y = check(0.0, 0.0)
+        assert len(x) == 1 + math.ceil(math.hypot(0.1, 0.13) * 10) + math.ceil(
+            math.hypot(0.22, 0.33) * 10
+        )
+        assert (x[-1], y[-1]) == pytest.approx((0.32, 0.2))
+
+    def test_a_hatched_box_outlines_then_alternates_its_diagonals(self) -> None:
+        x, y = whiteboard.hatched(0.0, 0.0, 3.0, 1.0)
+        corners = [(0.0, 0.0), (3.0, 0.0), (3.0, 1.0), (0.0, 1.0), (0.0, 0.0)]
+        x0, y0 = line(corners)
+        assert np.array_equal(x[: len(x0)], x0) and np.array_equal(y[: len(y0)], y0)
+        feet = np.arange(0.3, 3.0 - 0.5, 0.3)
+        ends = [(foot, 0.0, foot + 0.5, 1.0) for foot in feet]
+        expected = list(corners)
+        for k, (a, b, c, d) in enumerate(ends):
+            expected += [(a, b), (c, d)] if k % 2 == 0 else [(c, d), (a, b)]
+        ex, ey = line(expected)
+        assert np.allclose(x, ex) and np.allclose(y, ey)
+
+
 class TestTheTimeline:
+    def test_a_stroke_shows_a_prefix_rounded_up_on_each_frame(self) -> None:
+        ten = Stroke("s", np.linspace(1.0, 9.0, 10), np.full(10, 2.0), frames=3)
+        frames = timeline(_scene(ten))
+        assert [(f.done, f.partial) for f in frames] == [(0, 0), (0, 4), (0, 7), (1, 0)]
+
     def test_each_scene_takes_the_frames_and_time_it_did_in_its_post(self, scenes) -> None:
         """quantitative-trading pinned these two counts and totals for the
         USD.CAD post's GIFs."""
@@ -427,6 +482,8 @@ class TestAClearDraft:
     def test_it_writes_the_gif_and_its_last_frame(self, tmp_path) -> None:
         _found(_adf(), tmp_path)
         assert {path.name for path in tmp_path.iterdir()} == {"adf.gif", "adf_last.png"}
+        with Image.open(tmp_path / "adf.gif") as image:
+            assert (image.n_frames, image.info["loop"]) == (len(timeline(_adf())), 0)
 
     def test_a_paced_draft_is_timed_by_the_paced_timeline(self, tmp_path) -> None:
         draft(_adf(), tmp_path, paced=True)
@@ -440,8 +497,14 @@ class TestEachBrokenRuleIsFlagged:
 
     @pytest.mark.parametrize(
         ("x", "y", "ha"),
-        [(9.8, 4.6, "left"), (9.9, 3.0, "left"), (5.0, 4.68, "left"), (0.02, 3.0, "right")],
-        ids=["corner", "right edge", "top edge", "left edge"],
+        [
+            (9.8, 4.6, "left"),
+            (9.9, 3.0, "left"),
+            (5.0, 4.68, "left"),
+            (0.02, 3.0, "right"),
+            (5.0, 0.02, "left"),
+        ],
+        ids=["corner", "right edge", "top edge", "left edge", "bottom edge"],
     )
     def test_a_label_off_the_board(self, tmp_path, x, y, ha) -> None:
         scene = _scene(_line_across(), Label("off the board", x, y, names="line", ha=ha))
@@ -495,6 +558,178 @@ class TestEachBrokenRuleIsFlagged:
 
     def test_the_thresholds_are_the_ones_the_rules_name(self) -> None:
         assert (CLEAR_PX, INSIDE_PX, APART_LABELS_PX) == (10, 5, 4)
+
+    def test_two_labels_in_one_row_far_apart_are_not_flagged(self, tmp_path) -> None:
+        scene = _scene(
+            _line_across(),
+            Label("one", 2.0, 3.5, names="line"),
+            Label("two", 6.0, 3.5, names="line"),
+        )
+        assert not any("px apart" in found for found in _found(scene, tmp_path))
+
+    def test_the_brass_codes_are_named_in_order(self, tmp_path) -> None:
+        wide = stroke("band", line([(1.0, 2.0), (9.0, 2.0)]), color=GOOD, width=12.0)
+        scene = _scene(wide, dot("red", 3.0, 3.0, colours.RED), dot("brass", 6.0, 3.0))
+        (found,) = _found(scene, tmp_path)
+        codes = sorted(to_hex(c) for c in (colours.RED, colours.BRASS))
+        assert ", ".join(codes) in found
+
+
+class TestTheThresholds:
+    """Each layout rule flags a gap just short of its limit and passes one at it.
+    The layout is stubbed, so the gaps are exact rather than set by a font."""
+
+    @staticmethod
+    def _laid(monkeypatch, gap: float, boxes: list) -> list[str]:
+        monkeypatch.setattr(whiteboard, "hand_font", lambda: FALLBACK_FONT)
+        monkeypatch.setattr(whiteboard, "clearances", lambda scene, font: {"t": gap})
+        monkeypatch.setattr(whiteboard, "boxes", lambda scene, font: boxes)
+        return layout_problems(_scene(_line_across()))
+
+    @staticmethod
+    def _box(x0: float, y0: float, x1: float, y1: float):
+        from matplotlib.transforms import Bbox
+
+        return Bbox.from_extents(x0, y0, x1, y1)
+
+    def test_a_clearance_at_the_limit_passes_and_one_short_is_flagged(self, monkeypatch) -> None:
+        assert self._laid(monkeypatch, CLEAR_PX, []) == []
+        assert len(self._laid(monkeypatch, CLEAR_PX - 0.05, [])) == 1
+
+    @pytest.mark.parametrize("edge", ["left", "bottom", "right", "top"])
+    def test_a_box_at_the_inside_limit_passes_and_one_past_is_flagged(
+        self, monkeypatch, edge
+    ) -> None:
+        def at(inside: float):
+            x0, y0, x1, y1 = 100.0, 100.0, 200.0, 120.0
+            if edge == "left":
+                x0 = inside
+            elif edge == "bottom":
+                y0 = inside
+            elif edge == "right":
+                x1 = WIDTH - inside
+            else:
+                y1 = HEIGHT - inside
+            return [("t", self._box(x0, y0, x1, y1))]
+
+        assert self._laid(monkeypatch, CLEAR_PX, at(INSIDE_PX)) == []
+        assert len(self._laid(monkeypatch, CLEAR_PX, at(INSIDE_PX - 0.05))) == 1
+
+    @pytest.mark.parametrize("axis", ["x", "y"])
+    def test_two_labels_at_the_apart_limit_pass_and_closer_are_flagged(
+        self, monkeypatch, axis
+    ) -> None:
+        def pair(gap: float):
+            one = self._box(100.0, 100.0, 150.0, 120.0)
+            if axis == "x":
+                two = self._box(150.0 + gap, 100.0, 200.0 + gap, 120.0)
+            else:
+                two = self._box(100.0, 120.0 + gap, 150.0, 140.0 + gap)
+            return [("one", one), ("two", two)]
+
+        assert self._laid(monkeypatch, CLEAR_PX, pair(APART_LABELS_PX)) == []
+        assert len(self._laid(monkeypatch, CLEAR_PX, pair(APART_LABELS_PX - 0.05))) == 1
+
+
+class TestTheReach:
+    """A clearance is measured to the edge of a stroke's ink, so each gap here is
+    pinned to a label's box and a mark whose pixel position is known."""
+
+    @staticmethod
+    def _y(value: float) -> float:
+        return value / 4.7 * HEIGHT
+
+    @staticmethod
+    def _x(value: float) -> float:
+        return value / 10 * WIDTH
+
+    @staticmethod
+    def _extent(scene: Scene, text: str):
+        return next(b for t, b in whiteboard.boxes(scene) if t == text)
+
+    def test_a_line_reaches_half_its_width(self) -> None:
+        across = stroke("line", line([(1.0, 2.0), (9.0, 2.0)]), width=4.0)
+        scene = _scene(across, Label("above", 5.0, 2.6, names="line", ha="center"))
+        gap = clearances(scene)["above"]
+        expected = self._extent(scene, "above").y0 - self._y(2.0) - 4.0 * 100 / 72 / 2
+        assert gap == pytest.approx(expected, abs=0.6)
+
+    def test_a_line_is_ink_between_its_points_and_at_its_last(self) -> None:
+        """Two points, far apart, with labels over the middle and past the end."""
+        two = Stroke("seg", np.array([1.0, 5.0]), np.array([2.0, 2.0]), frames=1)
+        middle = Label("middle", 3.0, 2.0, names="seg", ha="center")
+        assert clearances(_scene(two, middle))["middle"] < 0
+        past = Label("past", 5.6, 2.0, names="seg")
+        scene = _scene(two, past)
+        expected = self._extent(scene, "past").x0 - self._x(5.0) - 2.2 * 100 / 72 / 2
+        assert clearances(scene)["past"] == pytest.approx(expected, abs=0.6)
+
+    def test_a_lone_dot_reaches_its_marker_radius(self) -> None:
+        scene = _scene(dot("d", 5.0, 2.0), Label("above", 5.0, 2.6, names="d", ha="center"))
+        expected = self._extent(scene, "above").y0 - self._y(2.0) - 9 * 100 / 72 / 2
+        assert clearances(scene)["above"] == pytest.approx(expected, abs=0.6)
+
+    def test_a_row_of_dots_reaches_its_dot_radius(self) -> None:
+        row = Stroke("row", np.linspace(1.0, 9.0, 9), np.full(9, 2.0), frames=3, dots=6.0)
+        scene = _scene(row, Label("above", 5.0, 2.6, names="row", ha="center"))
+        expected = self._extent(scene, "above").y0 - self._y(2.0) - 6.0 * 100 / 72 / 2
+        assert clearances(scene)["above"] == pytest.approx(expected, abs=0.6)
+
+    def test_a_text_drawn_twice_reports_its_nearer_copy(self) -> None:
+        across = _line_across()
+        near = Label("twice", 3.0, 2.5, names="line")
+        far = Label("twice", 7.0, 3.5, names="line")
+        alone = clearances(_scene(across, near))["twice"]
+        assert clearances(_scene(across, near, far))["twice"] == alone
+        assert clearances(_scene(across, far, near))["twice"] == alone
+
+
+class TestTheBoard:
+    def test_a_row_of_dots_and_a_dot_draw_markers_and_no_line(self) -> None:
+        row = Stroke("row", np.linspace(1.0, 9.0, 9), np.full(9, 2.0), frames=3, dots=6.0)
+        scene = _scene(row, dot("d", 5.0, 3.0), _line_across())
+        with matplotlib.rc_context(whiteboard.style()):
+            _, artists = whiteboard.new_board(scene)
+        dots, lone, drawn = artists[:3]
+        assert (dots.get_linestyle(), dots.get_marker(), dots.get_markersize()) == (
+            "None",
+            "o",
+            6.0,
+        )
+        assert (lone.get_linestyle(), lone.get_markersize()) == ("None", 9)
+        assert drawn.get_linestyle() == "-"
+
+    def test_a_dashed_stroke_draws_four_on_three_off(self) -> None:
+        dashed = stroke("d", line([(1.0, 2.0), (9.0, 2.0)]), dashed=True)
+        with matplotlib.rc_context(whiteboard.style()):
+            _, (artist, _) = whiteboard.new_board(_scene(dashed))
+        assert artist.get_linestyle() == "--"
+        assert artist._unscaled_dash_pattern == (0, (4, 3))
+
+    def test_a_tint_and_a_label_start_hidden_and_show_once_done(self) -> None:
+        band = Fill("band", 1.0, 1.0, 4.0, 1.5, colours.TINT)
+        scene = _scene(band, Label("a band", 5.0, 3.5, names="band"))
+        with matplotlib.rc_context(whiteboard.style()):
+            _, artists = whiteboard.new_board(scene)
+            assert [a.get_visible() for a in artists[:2]] == [False, False]
+            whiteboard.show(scene, artists, Frame(2, 0, 0))
+            assert [a.get_visible() for a in artists[:2]] == [True, True]
+
+    def test_the_title_is_bold_16_point_ink(self) -> None:
+        with matplotlib.rc_context(whiteboard.style()):
+            _, artists = whiteboard.new_board(_scene())
+        title = artists[-1]
+        assert (title.get_text(), title.get_fontsize(), title.get_fontweight()) == (
+            "A test sketch",
+            16,
+            "bold",
+        )
+        assert to_hex(title.get_color()) == to_hex(INK)
+
+    def test_the_wobble_and_the_text_settings(self) -> None:
+        settings = whiteboard.style(FALLBACK_FONT)
+        assert settings["path.sketch"] == (1.0, 100.0, 2.0)
+        assert settings["text.parse_math"] is False
 
 
 class TestBothFontsAreChecked:
