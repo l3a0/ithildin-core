@@ -212,6 +212,14 @@ class TestTheShapeGeometry:
         seen = [(xi, yi) for xi, yi in zip(x, y, strict=True) if (xi, yi) in corners]
         assert seen == corners
 
+    def test_a_repeated_point_still_takes_one_step(self) -> None:
+        x, _ = line([(0.0, 0.0), (0.0, 0.0), (1.0, 0.0)])
+        assert len(x) == 1 + 1 + 6
+
+    def test_a_spans_ticks_default_to_0_13(self) -> None:
+        _, y = span(1.0, 3.0, 2.0)
+        assert (round(float(y.max()), 9), round(float(y.min()), 9)) == (2.13, 1.87)
+
     def test_a_span_has_a_tick_at_each_end(self) -> None:
         x, y = span(1.0, 3.0, 2.0, tick=0.13)
         points = set(zip(x.round(9), y.round(9), strict=True))
@@ -725,6 +733,16 @@ class TestTheBoard:
             "bold",
         )
         assert to_hex(title.get_color()) == to_hex(INK)
+
+    def test_a_stroke_and_a_label_keep_their_own_settings(self) -> None:
+        thick = stroke("t", line([(1.0, 2.0), (9.0, 2.0)]), width=3.7)
+        formula = Label(r"$\tau^{2H}$", 5.0, 3.5, names="t", math=True)
+        plain = Label("plain", 2.0, 3.5, names="t")
+        with matplotlib.rc_context(whiteboard.style()):
+            _, (drawn, maths, words, _) = whiteboard.new_board(_scene(thick, formula, plain))
+        assert drawn.get_linewidth() == 3.7
+        assert (maths.get_va(), words.get_va()) == ("center", "center")
+        assert maths._parse_math is True and words._parse_math is False
 
     def test_the_wobble_and_the_text_settings(self) -> None:
         settings = whiteboard.style(FALLBACK_FONT)
